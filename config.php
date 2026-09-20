@@ -2,139 +2,58 @@
 
 /*
 |--------------------------------------------------------------------------
-| DATABASE CONFIGURATION
+| Database Configuration
+|--------------------------------------------------------------------------
+| Works with both:
+| 1. Local XAMPP
+| 2. Railway MySQL
 |--------------------------------------------------------------------------
 */
 
-$host = "localhost";
-$dbname = "appkarkhana";
-$dbuser = "root";
-$dbpass = "";
+// Railway environment variables
+$db_host = getenv('MYSQLHOST');
+$db_port = getenv('MYSQLPORT');
+$db_user = getenv('MYSQLUSER');
+$db_pass = getenv('MYSQLPASSWORD');
+$db_name = getenv('MYSQLDATABASE');
+
+// If Railway variables are not available, use local XAMPP settings
+if (!$db_host) {
+    $db_host = 'localhost';
+}
+
+if (!$db_port) {
+    $db_port = '3306';
+}
+
+if (!$db_user) {
+    $db_user = 'root';
+}
+
+if ($db_pass === false) {
+    $db_pass = '';
+}
+
+if (!$db_name) {
+    $db_name = 'appkarkhana';
+}
 
 
-/*
-|--------------------------------------------------------------------------
-| DATABASE CONNECTION
-|--------------------------------------------------------------------------
-*/
-
+// Create database connection
 $conn = new mysqli(
-    $host,
-    $dbuser,
-    $dbpass,
-    $dbname
+    $db_host,
+    $db_user,
+    $db_pass,
+    $db_name,
+    (int) $db_port
 );
 
+
+// Check connection
 if ($conn->connect_error) {
-
-    http_response_code(500);
-
-    header("Content-Type: application/json; charset=UTF-8");
-
-    echo json_encode([
-        "success" => false,
-        "message" => "Database connection failed."
-    ]);
-
-    exit;
+    die("Database connection failed: " . $conn->connect_error);
 }
 
+
+// Set UTF-8
 $conn->set_charset("utf8mb4");
-
-
-/*
-|--------------------------------------------------------------------------
-| CORS
-|--------------------------------------------------------------------------
-*/
-
-$allowed_origin = "http://localhost:5173";
-
-if (isset($_SERVER["HTTP_ORIGIN"])) {
-
-    if ($_SERVER["HTTP_ORIGIN"] === $allowed_origin) {
-
-        header(
-            "Access-Control-Allow-Origin: " .
-            $allowed_origin
-        );
-
-        header(
-            "Access-Control-Allow-Credentials: true"
-        );
-
-        header(
-            "Access-Control-Allow-Headers: Content-Type"
-        );
-
-        header(
-            "Access-Control-Allow-Methods: GET, POST, OPTIONS"
-        );
-    }
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| OPTIONS REQUEST
-|--------------------------------------------------------------------------
-*/
-
-if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
-
-    http_response_code(200);
-
-    exit;
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| JSON RESPONSE HELPER
-|--------------------------------------------------------------------------
-*/
-
-function jsonResponse(
-    $success,
-    $message,
-    $data = []
-) {
-
-    header(
-        "Content-Type: application/json; charset=UTF-8"
-    );
-
-    echo json_encode(
-        array_merge(
-            [
-                "success" => $success,
-                "message" => $message
-            ],
-            $data
-        )
-    );
-
-    exit;
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| START SESSION
-|--------------------------------------------------------------------------
-*/
-
-if (session_status() === PHP_SESSION_NONE) {
-
-    session_set_cookie_params([
-        "lifetime" => 0,
-        "path" => "/",
-        "secure" => false,
-        "httponly" => true,
-        "samesite" => "Lax"
-    ]);
-
-    session_start();
-}
-
-?>
