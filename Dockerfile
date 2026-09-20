@@ -2,34 +2,27 @@ FROM php:8.3-apache
 
 WORKDIR /var/www/html
 
-# Install MySQLi
+# Install MySQLi extension
 RUN docker-php-ext-install mysqli
 
-# Remove all enabled MPM modules
-RUN rm -f /etc/apache2/mods-enabled/mpm_*.load \
-    /etc/apache2/mods-enabled/mpm_*.conf
-
-# Enable only prefork MPM
-RUN a2enmod mpm_prefork
-
-# Enable rewrite
+# Enable Apache rewrite
 RUN a2enmod rewrite
 
-# Copy API files
+# Copy backend files
 COPY . /var/www/html/
 
-# Upload directories
+# Create upload directories
 RUN mkdir -p /var/www/html/uploads/payment_screenshots \
     && chown -R www-data:www-data /var/www/html/uploads \
     && chmod -R 775 /var/www/html/uploads
 
-# Apache port
-RUN sed -i 's/^Listen .*/Listen 80/' /etc/apache2/ports.conf \
-    && sed -i 's/<VirtualHost \*:[0-9]*>/<VirtualHost *:80>/' /etc/apache2/sites-available/000-default.conf
+# Copy Apache startup script
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
-# Check Apache configuration during build
-RUN apache2ctl -t
+# Make startup script executable
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 80
 
-CMD ["apache2-foreground"]
+# Start Apache through custom entrypoint
+CMD ["/usr/local/bin/docker-entrypoint.sh"]
